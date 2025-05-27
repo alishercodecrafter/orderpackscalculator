@@ -63,7 +63,7 @@ func (mr *MockPacksRepositoryMockRecorder) GetPacks() *gomock.Call {
 }
 
 // RemovePack mocks base method.
-func (m *MockPacksRepository) RemovePack(arg0 int) error {
+func (m *MockPacksRepository) RemovePack(arg0 model.PackSize) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemovePack", arg0)
 	ret0, _ := ret[0].(error)

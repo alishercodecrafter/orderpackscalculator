@@ -17,7 +17,7 @@ func TestPacksServiceImpl_GetPacks(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := NewMockPacksRepository(ctrl)
-	mockPacks := model.Packs{{PackSize: 250}, {PackSize: 500}}
+	mockPacks := model.Packs{{Size: 250}, {Size: 500}}
 
 	mockRepo.EXPECT().GetPacks().Return(mockPacks)
 
@@ -34,7 +34,7 @@ func TestPacksServiceImpl_AddPack(t *testing.T) {
 	mockRepo := NewMockPacksRepository(ctrl)
 
 	// Test with valid pack
-	validPack := model.Pack{PackSize: 100}
+	validPack := model.Pack{Size: 100}
 	mockRepo.EXPECT().AddPack(validPack).Return(nil)
 
 	service := NewPacksService(mockRepo)
@@ -43,7 +43,7 @@ func TestPacksServiceImpl_AddPack(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test with invalid pack size
-	invalidPack := model.Pack{PackSize: 0}
+	invalidPack := model.Pack{Size: 0}
 
 	// No expectations needed for this test as it shouldn't reach the repository
 	service = NewPacksService(mockRepo)
@@ -53,7 +53,7 @@ func TestPacksServiceImpl_AddPack(t *testing.T) {
 	require.Contains(t, err.Error(), "greater than zero")
 
 	// Test when repository returns error
-	errorPack := model.Pack{PackSize: 200}
+	errorPack := model.Pack{Size: 200}
 	mockRepo.EXPECT().AddPack(errorPack).Return(errors.New("repo error"))
 
 	err = service.AddPack(errorPack)
@@ -68,17 +68,17 @@ func TestPacksServiceImpl_RemovePack(t *testing.T) {
 	mockRepo := NewMockPacksRepository(ctrl)
 
 	// Test successful removal
-	mockRepo.EXPECT().RemovePack(250).Return(nil)
+	mockRepo.EXPECT().RemovePack(model.PackSize(250)).Return(nil)
 
 	service := NewPacksService(mockRepo)
-	err := service.RemovePack(250)
+	err := service.RemovePack(model.PackSize(250))
 
 	require.NoError(t, err)
 
 	// Test when repository returns error
-	mockRepo.EXPECT().RemovePack(999).Return(errors.New("not found"))
+	mockRepo.EXPECT().RemovePack(model.PackSize(999)).Return(errors.New("not found"))
 
-	err = service.RemovePack(999)
+	err = service.RemovePack(model.PackSize(999))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not found")
 }
@@ -89,11 +89,11 @@ func TestPacksServiceImpl_CalculatePacks(t *testing.T) {
 
 	mockRepo := NewMockPacksRepository(ctrl)
 	packs := model.Packs{
-		{PackSize: 250},
-		{PackSize: 500},
-		{PackSize: 1000},
-		{PackSize: 2000},
-		{PackSize: 5000},
+		{Size: 250},
+		{Size: 500},
+		{Size: 1000},
+		{Size: 2000},
+		{Size: 5000},
 	}
 
 	// Since this will be called for each test case, we use AnyTimes()
@@ -103,27 +103,27 @@ func TestPacksServiceImpl_CalculatePacks(t *testing.T) {
 
 	testCases := []struct {
 		orderSize     int
-		expectedPacks map[int]int
+		expectedPacks map[model.PackSize]int
 	}{
 		{
 			orderSize:     1,
-			expectedPacks: map[int]int{250: 1},
+			expectedPacks: map[model.PackSize]int{250: 1},
 		},
 		{
 			orderSize:     250,
-			expectedPacks: map[int]int{250: 1},
+			expectedPacks: map[model.PackSize]int{250: 1},
 		},
 		{
 			orderSize:     251,
-			expectedPacks: map[int]int{500: 1},
+			expectedPacks: map[model.PackSize]int{500: 1},
 		},
 		{
 			orderSize:     501,
-			expectedPacks: map[int]int{250: 1, 500: 1},
+			expectedPacks: map[model.PackSize]int{250: 1, 500: 1},
 		},
 		{
 			orderSize:     12001,
-			expectedPacks: map[int]int{250: 1, 2000: 1, 5000: 2},
+			expectedPacks: map[model.PackSize]int{250: 1, 2000: 1, 5000: 2},
 		},
 	}
 
@@ -144,11 +144,11 @@ func TestPacksServiceImpl_CalculatePacksEdgeCases(t *testing.T) {
 
 	mockRepo := NewMockPacksRepository(ctrl)
 	packs := model.Packs{
-		{PackSize: 10},
-		{PackSize: 15},
-		{PackSize: 20},
-		{PackSize: 50},
-		{PackSize: 100},
+		{Size: 10},
+		{Size: 15},
+		{Size: 20},
+		{Size: 50},
+		{Size: 100},
 	}
 
 	// Since this will be called for each test case, we use AnyTimes()
@@ -158,7 +158,7 @@ func TestPacksServiceImpl_CalculatePacksEdgeCases(t *testing.T) {
 
 	testCases := []struct {
 		orderSize       int
-		expectedPacks   map[int]int
+		expectedPacks   map[model.PackSize]int
 		isErrorExpected bool
 	}{
 		{
@@ -171,31 +171,31 @@ func TestPacksServiceImpl_CalculatePacksEdgeCases(t *testing.T) {
 		},
 		{
 			orderSize:     1,
-			expectedPacks: map[int]int{10: 1},
+			expectedPacks: map[model.PackSize]int{10: 1},
 		},
 		{
 			orderSize:     250,
-			expectedPacks: map[int]int{100: 2, 50: 1},
+			expectedPacks: map[model.PackSize]int{100: 2, 50: 1},
 		},
 		{
 			orderSize:     251,
-			expectedPacks: map[int]int{100: 2, 50: 1, 10: 1},
+			expectedPacks: map[model.PackSize]int{100: 2, 50: 1, 10: 1},
 		},
 		{
 			orderSize:     17,
-			expectedPacks: map[int]int{20: 1},
+			expectedPacks: map[model.PackSize]int{20: 1},
 		},
 		{
 			orderSize:     40,
-			expectedPacks: map[int]int{20: 2},
+			expectedPacks: map[model.PackSize]int{20: 2},
 		},
 		{
 			orderSize:     23,
-			expectedPacks: map[int]int{20: 1, 10: 1},
+			expectedPacks: map[model.PackSize]int{20: 1, 10: 1},
 		},
 		{
 			orderSize:     111,
-			expectedPacks: map[int]int{100: 1, 15: 1},
+			expectedPacks: map[model.PackSize]int{100: 1, 15: 1},
 		},
 	}
 

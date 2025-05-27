@@ -1,4 +1,3 @@
-// internal/service/service.go
 package service
 
 import (
@@ -15,7 +14,7 @@ type PacksRepository interface {
 	// AddPack adds a new pack
 	AddPack(pack model.Pack) error
 	// RemovePack removes a pack by its size
-	RemovePack(packSize int) error
+	RemovePack(packSize model.PackSize) error
 }
 
 // PacksServiceImpl handles the business logic for pack calculations
@@ -37,7 +36,7 @@ func (s *PacksServiceImpl) GetPacks() model.Packs {
 
 // AddPack adds a new pack
 func (s *PacksServiceImpl) AddPack(pack model.Pack) error {
-	if pack.PackSize <= 0 {
+	if pack.Size <= 0 {
 		return fmt.Errorf("pack size must be greater than zero")
 	}
 
@@ -45,14 +44,14 @@ func (s *PacksServiceImpl) AddPack(pack model.Pack) error {
 }
 
 // RemovePackSize removes a pack size
-func (s *PacksServiceImpl) RemovePack(packSize int) error {
+func (s *PacksServiceImpl) RemovePack(packSize model.PackSize) error {
 	return s.repo.RemovePack(packSize)
 }
 
 // CalculatePacks calculates the optimal number of packs needed for an order
 func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationResponse, error) {
 	packList := s.repo.GetPacks()
-	packsRule2 := make(map[int]int)
+	packsRule2 := make(map[model.PackSize]int)
 
 	// If no packList or invalid order size, return empty packsRule2
 	if len(packList) == 0 {
@@ -64,22 +63,22 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 	}
 
 	// Extract pack sizes for calculation
-	packSizes := make([]int, len(packList))
+	packSizes := make([]model.PackSize, len(packList))
 	for i, pack := range packList {
-		packSizes[i] = pack.PackSize
+		packSizes[i] = pack.Size
 	}
 	// Sort pack sizes in ascending order
 	slices.Sort(packSizes)
 
-	packsRule3 := make(map[int]int)
+	packsRule3 := make(map[model.PackSize]int)
 	originalOrderSize := orderSize
 
 	// If order size is larger than the largest pack,
 	// we can use the largest pack first
 	maxPackSize := packSizes[len(packSizes)-1]
-	if orderSize > maxPackSize {
-		count := orderSize / maxPackSize
-		orderSize -= count * maxPackSize
+	if orderSize > int(maxPackSize) {
+		count := orderSize / int(maxPackSize)
+		orderSize -= count * int(maxPackSize)
 		packsRule2[maxPackSize] = count
 		packsRule3[maxPackSize] = count
 	}
@@ -115,11 +114,11 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 	}
 }
 
-func getAmountOfItemsInPacks(packs map[int]int) (int, int) {
+func getAmountOfItemsInPacks(packs map[model.PackSize]int) (int, int) {
 	amount := 0
 	totalCount := 0
 	for packSize, count := range packs {
-		amount += packSize * count
+		amount += int(packSize) * count
 		totalCount += count
 	}
 
@@ -127,7 +126,7 @@ func getAmountOfItemsInPacks(packs map[int]int) (int, int) {
 }
 
 // calculatePacks is a helper function to calculate the optimal number of packs needed for an order
-func (s *PacksServiceImpl) calculatePacks(orderSize int, packs map[int]int, sortedPackSizes *[]int, leastFewPacks bool) {
+func (s *PacksServiceImpl) calculatePacks(orderSize int, packs map[model.PackSize]int, sortedPackSizes *[]model.PackSize, leastFewPacks bool) {
 	if orderSize == 0 {
 		return
 	}
@@ -136,7 +135,7 @@ func (s *PacksServiceImpl) calculatePacks(orderSize int, packs map[int]int, sort
 	packSize := (*sortedPackSizes)[0]
 	selectedPackSizeIndex := -1
 	for i, size := range *sortedPackSizes {
-		if orderSize < size {
+		if orderSize < int(size) {
 			break
 		}
 		// set packSize to the largest size that fits in orderSize
@@ -153,12 +152,12 @@ func (s *PacksServiceImpl) calculatePacks(orderSize int, packs map[int]int, sort
 	}
 
 	// Devide the order size by the pack size to get the count of packs needed
-	count := orderSize / packSize
+	count := orderSize / int(packSize)
 	if count == 0 {
 		orderSize = 0
 		packs[packSize]++
 	} else {
-		orderSize -= count * packSize
+		orderSize -= count * int(packSize)
 		packs[packSize] += count
 	}
 

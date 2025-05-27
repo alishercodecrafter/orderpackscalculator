@@ -1,0 +1,63 @@
+<!-- web/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Packs Calculator</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Order Packs Calculator</h1>
+
+        <div class="card">
+            <h2>Pack Sizes</h2>
+            <table id="packSizesTable">
+                <thead>
+                    <tr>
+                        <th>Pack Size</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="packSizesList">
+                    {{range .packSizes}}
+                    <tr>
+                        <td>{{.size}}</td>
+                        <td><button class="btn-delete" onclick="removePackSize({{.}})">Remove</button></td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <div class="form-group">
+                <input type="number" id="newPackSize" placeholder="New pack size">
+                <button onclick="addPackSize()" class="btn-primary">Add Pack Size</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Calculate</h2>
+            <div class="form-group">
+                <input type="number" id="orderSize" placeholder="Enter order size">
+                <button onclick="calculatePacks()" class="btn-primary">Calculate</button>
+            </div>
+
+            <div id="resultSection" style="display: none;">
+                <h3>Results</h3>
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>Pack</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

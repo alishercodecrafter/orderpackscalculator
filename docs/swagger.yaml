@@ -1,0 +1,135 @@
+definitions:
+  model.AddPackRequest:
+    properties:
+      pack:
+        $ref: '#/definitions/model.Pack'
+    required:
+    - pack
+    type: object
+  model.CalculationRequest:
+    properties:
+      orderSize:
+        type: integer
+    type: object
+  model.CalculationResponse:
+    properties:
+      orderSize:
+        description: OrderSize is the original size of the order
+        type: integer
+      packs:
+        additionalProperties:
+          type: integer
+        description: Packs represents the calculated packs needed for the order
+        type: object
+    type: object
+  model.Pack:
+    properties:
+      size:
+        type: integer
+    required:
+    - size
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      description: Get the main page of the Pack Calculator app
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML page
+          schema:
+            type: string
+      summary: Render main page
+  /api/calculate:
+    post:
+      consumes:
+      - application/json
+      description: Calculate the optimal number of packs needed for an order
+      parameters:
+      - description: Order size
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CalculationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Calculation result
+          schema:
+            $ref: '#/definitions/model.CalculationResponse'
+        "400":
+          description: Error response
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Calculate packs
+  /api/packs:
+    get:
+      description: Get a list of all available packs
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of packs
+          schema:
+            items:
+              $ref: '#/definitions/model.Pack'
+            type: array
+      summary: Get all packs
+    post:
+      consumes:
+      - application/json
+      description: Add a new pack with its properties
+      parameters:
+      - description: Pack to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AddPackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success response
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Error response
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add pack
+  /api/packs/{size}:
+    delete:
+      description: Remove a pack by its size value
+      parameters:
+      - description: Pack size to remove
+        in: path
+        name: size
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success response
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Error response
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Remove pack
+swagger: "2.0"

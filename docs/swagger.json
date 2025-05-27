@@ -1,0 +1,208 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Get the main page of the Pack Calculator app",
+                "produces": [
+                    "text/html"
+                ],
+                "summary": "Render main page",
+                "responses": {
+                    "200": {
+                        "description": "HTML page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/calculate": {
+            "post": {
+                "description": "Calculate the optimal number of packs needed for an order",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Calculate packs",
+                "parameters": [
+                    {
+                        "description": "Order size",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CalculationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Calculation result",
+                        "schema": {
+                            "$ref": "#/definitions/model.CalculationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Error response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs": {
+            "get": {
+                "description": "Get a list of all available packs",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get all packs",
+                "responses": {
+                    "200": {
+                        "description": "List of packs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.Pack"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new pack with its properties",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add pack",
+                "parameters": [
+                    {
+                        "description": "Pack to add",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AddPackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Error response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packs/{size}": {
+            "delete": {
+                "description": "Remove a pack by its size value",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Remove pack",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Pack size to remove",
+                        "name": "size",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Error response",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.AddPackRequest": {
+            "type": "object",
+            "required": [
+                "pack"
+            ],
+            "properties": {
+                "pack": {
+                    "$ref": "#/definitions/model.Pack"
+                }
+            }
+        },
+        "model.CalculationRequest": {
+            "type": "object",
+            "properties": {
+                "orderSize": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.CalculationResponse": {
+            "type": "object",
+            "properties": {
+                "orderSize": {
+                    "description": "OrderSize is the original size of the order",
+                    "type": "integer"
+                },
+                "packs": {
+                    "description": "Packs represents the calculated packs needed for the order",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "model.Pack": {
+            "type": "object",
+            "required": [
+                "size"
+            ],
+            "properties": {
+                "size": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

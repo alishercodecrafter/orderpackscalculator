@@ -18,11 +18,11 @@ func NewMemoryRepository() *MemoryRepository {
 	// Initialize with default pack sizes
 	return &MemoryRepository{
 		packs: model.Packs{
-			{PackSize: 250},
-			{PackSize: 500},
-			{PackSize: 1000},
-			{PackSize: 2000},
-			{PackSize: 5000},
+			{Size: 250},
+			{Size: 500},
+			{Size: 1000},
+			{Size: 2000},
+			{Size: 5000},
 		},
 	}
 }
@@ -38,7 +38,7 @@ func (r *MemoryRepository) GetPacks() model.Packs {
 
 	// Sort by pack size
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].PackSize < result[j].PackSize
+		return result[i].Size < result[j].Size
 	})
 
 	return result
@@ -48,8 +48,8 @@ func (r *MemoryRepository) GetPacks() model.Packs {
 func (r *MemoryRepository) AddPack(pack model.Pack) error {
 	// Check if pack size already exists
 	for _, p := range r.packs {
-		if p.PackSize == pack.PackSize {
-			return fmt.Errorf("pack size %d already exists", pack.PackSize)
+		if p.Size == pack.Size {
+			return fmt.Errorf("pack size %d already exists", pack.Size)
 		}
 	}
 	r.packs = append(r.packs, pack)
@@ -58,9 +58,9 @@ func (r *MemoryRepository) AddPack(pack model.Pack) error {
 }
 
 // RemovePack removes a pack by its size
-func (r *MemoryRepository) RemovePack(packSize int) error {
+func (r *MemoryRepository) RemovePack(packSize model.PackSize) error {
 	for i, pack := range r.packs {
-		if pack.PackSize == packSize {
+		if pack.Size == packSize {
 			// Remove the pack by replacing it with the last element and truncating
 			r.packs[i] = r.packs[len(r.packs)-1]
 			r.packs = r.packs[:len(r.packs)-1]

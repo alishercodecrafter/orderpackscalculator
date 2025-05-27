@@ -1,8 +1,11 @@
 package model
 
+// PackSize represents the size of a pack
+type PackSize int
+
 // Pack represents a pack entity with its properties
 type Pack struct {
-	PackSize int `json:"packSize" binding:"required"`
+	Size PackSize `json:"size" binding:"required"`
 	// More fields can be added in the future
 }
 
@@ -21,6 +24,8 @@ type CalculationRequest struct {
 
 // CalculationResponse represents the result of a pack calculation
 type CalculationResponse struct {
-	OrderSize int         `json:"orderSize"`
-	Packs     map[int]int `json:"packs"` // map of pack size to count
+	// OrderSize is the original size of the order
+	OrderSize int `json:"orderSize"`
+	// Packs represents the calculated packs needed for the order
+	Packs map[PackSize]int `json:"packs"` // map of pack size to count
 }
