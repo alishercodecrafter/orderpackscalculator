@@ -47,6 +47,10 @@ make run
 
 3. Access the application at http://localhost:8080
 
+### Testing Heroku Application
+
+Application is deployed at address: https://order-packs-calculator-2025-05-39eaddfd911d.herokuapp.com/
+
 ### Testing
 
 Run tests using:
@@ -107,10 +111,6 @@ Run `make help` to see all available commands:
 - `make docker-run` - Run application in the Docker container
 - `make swagger` - Generate Swagger documentation
 - `make heroku-deploy` - Deploy to Heroku
-
-### Testing Heroku Application
-
-Application is deployed at address: https://order-packs-calculator-2025-05-39eaddfd911d.herokuapp.com/
 
 ### API Usage Examples
 
