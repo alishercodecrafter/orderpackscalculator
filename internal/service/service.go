@@ -83,11 +83,15 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 		packsRule3[maxPackSize] = count
 	}
 
-	s.calculatePacks(orderSize, packsRule2, &packSizes, false)
+	// calculate packs for the remaining order size
+	// 1st rule: use the smallest pack size that can fit whole remaining order size
 	s.calculatePacks(orderSize, packsRule3, &packSizes, true)
+	// 2md rule: use the largest pack size that can fit most of the remaining order size
+	s.calculatePacks(orderSize, packsRule2, &packSizes, false)
 
 	amount2, count2 := getAmountOfItemsInPacks(packsRule2)
 	amount3, count3 := getAmountOfItemsInPacks(packsRule3)
+	// Check which rule gives the least amount of packs
 	switch {
 	case amount2 < amount3:
 		return model.CalculationResponse{
@@ -100,6 +104,7 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 			Packs:     packsRule3,
 		}, nil
 	default:
+		// If both amounts are equal, we compare the count of packs
 		if count2 < count3 {
 			return model.CalculationResponse{
 				OrderSize: originalOrderSize,
@@ -114,6 +119,7 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 	}
 }
 
+// getAmountOfItemsInPacks calculates the total amount of items in packs and the total count of packs
 func getAmountOfItemsInPacks(packs map[model.PackSize]int) (int, int) {
 	amount := 0
 	totalCount := 0
@@ -126,7 +132,17 @@ func getAmountOfItemsInPacks(packs map[model.PackSize]int) (int, int) {
 }
 
 // calculatePacks is a helper function to calculate the optimal number of packs needed for an order
-func (s *PacksServiceImpl) calculatePacks(orderSize int, packs map[model.PackSize]int, sortedPackSizes *[]model.PackSize, leastFewPacks bool) {
+// Parameters:
+// - orderSize: the remaining order size to be packed
+// - packs: a map to store the count of each pack size used
+// - sortedPackSizes: a slice of pack sizes sorted in ascending order
+// - leastFewPacks: a boolean indicating whether to use the least number of packs
+func (s *PacksServiceImpl) calculatePacks(
+	orderSize int,
+	packs map[model.PackSize]int,
+	sortedPackSizes *[]model.PackSize,
+	leastFewPacks bool,
+) {
 	if orderSize == 0 {
 		return
 	}
