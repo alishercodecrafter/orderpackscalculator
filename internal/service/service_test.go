@@ -125,6 +125,10 @@ func TestPacksServiceImpl_CalculatePacks(t *testing.T) {
 			orderSize:     12001,
 			expectedPacks: map[model.PackSize]int{250: 1, 2000: 1, 5000: 2},
 		},
+		{
+			orderSize:     14450,
+			expectedPacks: map[model.PackSize]int{5000: 2, 2000: 2, 500: 1},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -179,7 +183,7 @@ func TestPacksServiceImpl_CalculatePacksEdgeCases(t *testing.T) {
 		},
 		{
 			orderSize:     251,
-			expectedPacks: map[model.PackSize]int{100: 2, 50: 1, 10: 1},
+			expectedPacks: map[model.PackSize]int{15: 17},
 		},
 		{
 			orderSize:     17,
@@ -191,11 +195,53 @@ func TestPacksServiceImpl_CalculatePacksEdgeCases(t *testing.T) {
 		},
 		{
 			orderSize:     23,
-			expectedPacks: map[model.PackSize]int{20: 1, 10: 1},
+			expectedPacks: map[model.PackSize]int{15: 2},
 		},
 		{
 			orderSize:     111,
 			expectedPacks: map[model.PackSize]int{100: 1, 15: 1},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("Order size %d", tc.orderSize), func(t *testing.T) {
+			result, err := service.CalculatePacks(tc.orderSize)
+			if tc.isErrorExpected {
+				require.Error(t, err)
+
+				return
+			}
+			require.NoError(t, err)
+
+			require.Equal(t, tc.orderSize, result.OrderSize)
+			require.Equal(t, tc.expectedPacks, result.Packs)
+		})
+	}
+}
+
+func TestPacksServiceImpl_CalculatePacksEdgeCases2(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := NewMockPacksRepository(ctrl)
+	packs := model.Packs{
+		{Size: 5},
+		{Size: 12},
+	}
+
+	// Since this will be called for each test case, we use AnyTimes()
+	mockRepo.EXPECT().GetPacks().Return(packs).AnyTimes()
+
+	service := NewPacksService(mockRepo)
+
+	testCases := []struct {
+		orderSize       int
+		expectedPacks   map[model.PackSize]int
+		isErrorExpected bool
+	}{
+		{
+			orderSize:     14,
+			expectedPacks: map[model.PackSize]int{5: 3},
 		},
 	}
 

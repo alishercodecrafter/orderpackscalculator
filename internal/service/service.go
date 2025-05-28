@@ -1,6 +1,7 @@
 package service
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 
@@ -51,8 +52,6 @@ func (s *PacksServiceImpl) RemovePack(packSize model.PackSize) error {
 // CalculatePacks calculates the optimal number of packs needed for an order
 func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationResponse, error) {
 	packList := s.repo.GetPacks()
-	packsRule2 := make(map[model.PackSize]int)
-
 	// If no packList or invalid order size, return empty packsRule2
 	if len(packList) == 0 {
 		return model.CalculationResponse{}, fmt.Errorf("available packsRule2 list is empty")
@@ -62,64 +61,24 @@ func (s *PacksServiceImpl) CalculatePacks(orderSize int) (model.CalculationRespo
 		return model.CalculationResponse{}, fmt.Errorf("order size must be greater than zero")
 	}
 
-	// Extract pack sizes for calculation
-	packSizes := make([]model.PackSize, len(packList))
-	for i, pack := range packList {
-		packSizes[i] = pack.Size
-	}
-	// Sort pack sizes in ascending order
-	slices.Sort(packSizes)
-
-	packsRule3 := make(map[model.PackSize]int)
-	originalOrderSize := orderSize
-
-	// If order size is larger than the largest pack,
-	// we can use the largest pack first
-	maxPackSize := packSizes[len(packSizes)-1]
-	if orderSize > int(maxPackSize) {
-		count := orderSize / int(maxPackSize)
-		orderSize -= count * int(maxPackSize)
-		packsRule2[maxPackSize] = count
-		packsRule3[maxPackSize] = count
-	}
+	// Sort packs list in descending order based on size
+	slices.SortFunc(packList, func(a, b model.Pack) int {
+		return cmp.Compare(b.Size, a.Size)
+	})
 
 	// calculate packs for the remaining order size
-	// 1st rule: use the smallest pack size that can fit whole remaining order size
-	s.calculatePacks(orderSize, packsRule3, &packSizes, true)
-	// 2md rule: use the largest pack size that can fit most of the remaining order size
-	s.calculatePacks(orderSize, packsRule2, &packSizes, false)
+	results := calculatePacks(orderSize, orderSize, &packList, 0)
 
-	amount2, count2 := getAmountOfItemsInPacks(packsRule2)
-	amount3, count3 := getAmountOfItemsInPacks(packsRule3)
-	// Check which rule gives the least amount of packs
-	switch {
-	case amount2 < amount3:
-		return model.CalculationResponse{
-			OrderSize: originalOrderSize,
-			Packs:     packsRule2,
-		}, nil
-	case amount3 < amount2:
-		return model.CalculationResponse{
-			OrderSize: originalOrderSize,
-			Packs:     packsRule3,
-		}, nil
-	default:
-		// If both amounts are equal, we compare the count of packs
-		if count2 < count3 {
-			return model.CalculationResponse{
-				OrderSize: originalOrderSize,
-				Packs:     packsRule2,
-			}, nil
-		}
-
-		return model.CalculationResponse{
-			OrderSize: originalOrderSize,
-			Packs:     packsRule3,
-		}, nil
-	}
+	return model.CalculationResponse{
+		OrderSize: orderSize,
+		Packs:     getTheBestCombinationOfPacks(results),
+	}, nil
 }
 
 // getAmountOfItemsInPacks calculates the total amount of items in packs and the total count of packs
+// Returns:
+// - amount: the total amount of items in packs
+// - totalCount: the total count of packs
 func getAmountOfItemsInPacks(packs map[model.PackSize]int) (int, int) {
 	amount := 0
 	totalCount := 0
@@ -133,50 +92,134 @@ func getAmountOfItemsInPacks(packs map[model.PackSize]int) (int, int) {
 
 // calculatePacks is a helper function to calculate the optimal number of packs needed for an order
 // Parameters:
-// - orderSize: the remaining order size to be packed
-// - packs: a map to store the count of each pack size used
-// - sortedPackSizes: a slice of pack sizes sorted in ascending order
-// - leastFewPacks: a boolean indicating whether to use the least number of packs
-func (s *PacksServiceImpl) calculatePacks(
+// - originalOrderSize: the original size of the order
+// - orderSize: the current size of the order being processed
+// - packsList: a pointer to the list of available packs sorted in descending order by pack size
+// - startFrom: the index in packsList from which to start processing
+func calculatePacks(
+	originalOrderSize,
 	orderSize int,
-	packs map[model.PackSize]int,
-	sortedPackSizes *[]model.PackSize,
-	leastFewPacks bool,
-) {
-	if orderSize == 0 {
-		return
+	packsList *model.Packs,
+	startFrom int,
+) []map[model.PackSize]int {
+	// If orderSize is zero or less, return nil
+	if orderSize <= 0 {
+		return nil
 	}
 
-	// Find the largest pack size that can be used
-	packSize := (*sortedPackSizes)[0]
-	selectedPackSizeIndex := -1
-	for i, size := range *sortedPackSizes {
-		if orderSize < int(size) {
-			break
+	// If startFrom index is out of bounds, return nil
+	if startFrom >= len(*packsList) {
+		return nil
+	}
+
+	// list of packs to return
+	result := make([]map[model.PackSize]int, 0, len(*packsList))
+
+	// on 1st iteration we pack whole order size for each available pack sizes
+	if startFrom == 0 {
+		for i := 0; i < len(*packsList); i++ {
+			packSize := (*packsList)[i].Size
+
+			count := originalOrderSize / int(packSize)
+			remainOfDivision := originalOrderSize % int(packSize)
+			if remainOfDivision != 0 {
+				count++
+			}
+
+			m := make(map[model.PackSize]int)
+			m[packSize] = count
+
+			result = append(result, m)
 		}
-		// set packSize to the largest size that fits in orderSize
-		packSize = size
-		selectedPackSizeIndex = i
 	}
 
-	// If leastFewPacks is true then we use nearest larger pack size to pack orderSize
-	if leastFewPacks {
-		orderSize = 0
-		packs[(*sortedPackSizes)[selectedPackSizeIndex+1]]++
+	// on 2nd and further iterations we try remaining order in packs bigger than it
+	for i := startFrom; i < len(*packsList); i++ {
+		packSize := (*packsList)[i].Size
 
-		return
+		if orderSize != originalOrderSize && orderSize <= int(packSize) {
+			m := make(map[model.PackSize]int)
+			m[packSize] = 1
+			result = append(result, m)
+		}
 	}
 
-	// Devide the order size by the pack size to get the count of packs needed
-	count := orderSize / int(packSize)
-	if count == 0 {
-		orderSize = 0
-		packs[packSize]++
+	m := make(map[model.PackSize]int)
+	currentPackSize := (*packsList)[startFrom].Size
+	// if orderSize is larger than the current pack size, we can use it
+	if orderSize > int(currentPackSize) {
+		count := orderSize / int(currentPackSize)
+		m[currentPackSize] += count
+		remainOfDivision := orderSize % int(currentPackSize)
+		// if there is no remainder, we can return the result because we have found the best combination
+		if remainOfDivision == 0 {
+			result = append(result, m)
+
+			return result
+		} else {
+			orderSize = remainOfDivision
+		}
+
+		// if we have more packs to process,
+		// we can try to find the best combination of packs for the remaining order size
+		if startFrom < len(*packsList)-1 {
+			innerMap := getTheBestCombinationOfPacks(calculatePacks(
+				originalOrderSize,
+				orderSize,
+				packsList,
+				startFrom+1,
+			))
+			for packSize, count := range innerMap {
+				m[packSize] += count
+			}
+		} else {
+			m[currentPackSize]++
+		}
+
+		result = append(result, m)
 	} else {
-		orderSize -= count * int(packSize)
-		packs[packSize] += count
+		// go to next pack size
+		result = append(result, getTheBestCombinationOfPacks(calculatePacks(
+			originalOrderSize,
+			originalOrderSize,
+			packsList,
+			startFrom+1,
+		)))
 	}
 
-	// Recursively call calculatePacks with the remaining order size
-	s.calculatePacks(orderSize, packs, sortedPackSizes, leastFewPacks)
+	return result
+}
+
+// getTheBestCombinationOfPacks finds the best combination of packs from a list of pack combinations
+func getTheBestCombinationOfPacks(listOfPacks []map[model.PackSize]int) map[model.PackSize]int {
+	if len(listOfPacks) == 0 {
+		return map[model.PackSize]int{}
+	}
+
+	// exclude empty packs from the list
+	normalListOfPacks := make([]map[model.PackSize]int, 0, len(listOfPacks))
+	for _, packs := range listOfPacks {
+		if len(packs) == 0 {
+			continue
+		}
+
+		normalListOfPacks = append(normalListOfPacks, packs)
+	}
+
+	slices.SortFunc(normalListOfPacks, func(a, b map[model.PackSize]int) int {
+		amountA, countA := getAmountOfItemsInPacks(a)
+		amountB, countB := getAmountOfItemsInPacks(b)
+		// Compare by total amount of items in packs first
+		if amountA != amountB {
+			return cmp.Compare(amountA, amountB)
+		}
+		// If amounts are equal, compare by the total count of packs
+		return cmp.Compare(countA, countB)
+	})
+
+	if len(normalListOfPacks) == 0 {
+		return map[model.PackSize]int{}
+	}
+
+	return normalListOfPacks[0]
 }
