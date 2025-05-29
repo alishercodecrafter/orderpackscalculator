@@ -12,6 +12,11 @@ The Order Packs Calculator is a service for calculating number of packs needed t
 
 ## Principles
 
+- There are 3 rules calculation must follow:
+  - #1. Only whole packs can be sent. Packs cannot be broken open
+  - #2. Within the constraints of Rule 1 above, send out the least amount of items to fulfil the order
+  - #3. Within the constraints of Rules 1 & 2 above, send out as few packs as possible to fulfil each
+     order (Please note, rule #2 takes precedence over rule #3)
 - The service allows users to input different pack sizes
 - The service calculate the number of packs needed based on the order size and pack sizes
 - Flow:
