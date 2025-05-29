@@ -41,3 +41,45 @@ The Order Packs Calculator is a service for calculating number of packs needed t
 - The service must have a `README.md` file with instructions on how to run the service locally, how to run tests, and how to deploy the service
 - The service must have a `Makefile` with commands for running the service, running tests, building the Docker image, generating Swagger documentation, and deploying to Heroku
 
+## Implementation
+
+### File Structure
+
+```
+order-packs-calculator/
+├── cmd/
+│   └── server/
+│       └── main.go             # Entry point
+├── docs/
+│   └── docs.go                 # Swagger documentation
+│   └── swagger.json            # Swagger JSON file
+│   └── swagger.yaml            # Swagger YAML file
+├── internal/
+│   ├── controller/
+│   │   └── controller.go       # HTTP handlers
+│   ├── service/
+│   │   └── service.go          # Business logic
+│   │   └── service_test.go     # Unit tests for service
+│   │   └── mock_repository.go  # Mock for repository
+│   ├── repository/
+│   │   └── mem_impl.go         # In-memory implementation
+│   └── model/
+│       └── model.go            # Data models
+├── scripts
+│   └── generate_swagger.sh     # Script to generate Swagger documentation
+├── web/
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── styles.css      # CSS styles
+│   │   └── js/
+│   │       └── main.js         # Frontend JavaScript
+│   └── templates/
+│       └── index.html          # HTML template
+├── .gitignore
+├── Dockerfile
+├── go.mod
+├── go.sum
+├── design.md                   # Design document
+├── heroku.yml                  # Heroku deployment configuration
+└── README.md                   # Project documentation
+```
