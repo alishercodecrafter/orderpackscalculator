@@ -65,8 +65,6 @@ order-packs-calculator/
 │   │   └── mem_impl.go         # In-memory implementation
 │   └── model/
 │       └── model.go            # Data models
-├── scripts
-│   └── generate_swagger.sh     # Script to generate Swagger documentation
 ├── web/
 │   ├── static/
 │   │   ├── css/
@@ -76,10 +74,11 @@ order-packs-calculator/
 │   └── templates/
 │       └── index.html          # HTML template
 ├── .gitignore
-├── Dockerfile
-├── go.mod
-├── go.sum
+├── Dockerfile                  # Dockerfile for building the image
+├── go.mod                      # Go module file
+│   └── go.sum
 ├── design.md                   # Design document
 ├── heroku.yml                  # Heroku deployment configuration
+├── Makefile                    # Makefile for build and run commands
 └── README.md                   # Project documentation
 ```
